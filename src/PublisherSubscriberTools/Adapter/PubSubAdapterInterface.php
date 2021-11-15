@@ -27,9 +27,9 @@ interface PubSubAdapterInterface
 {
     /**
      * @param string $channel
-     * @param string $message
+     * @param array $message
      */
-    public function publish(string $channel, string $message): void;
+    public function publish(string $channel, array $message): void;
 
     /**
      * @param string[] $channels

@@ -43,9 +43,9 @@ class PubSubService
 
     /**
      * @param string $channel
-     * @param string $message
+     * @param array $message
      */
-    public function publish(string $channel, string $message): void
+    public function publish(string $channel, array $message): void
     {
         $this->adapter->publish($channel, $message);
     }
