@@ -3,10 +3,7 @@ version: 2.1
 jobs:
   static:
     docker:
-      - image: ${ACR_HOSTNAME_PD}/alpine-php8:latest
-        auth:
-          username: ${ACR_LOGIN_PD}
-          password: ${ACR_PASSWORD_PD}
+      - image: lusy/alpine-php8:latest
     working_directory: /var/www/html
     steps:
       - checkout
