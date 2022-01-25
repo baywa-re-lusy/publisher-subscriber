@@ -1,9 +1,11 @@
 BayWa r.e. Publisher/Subscriber Tools
 =====================================
 
+[![CircleCI](https://circleci.com/gh/baywa-re-lusy/publisher-subscriber/tree/main.svg?style=svg)](https://circleci.com/gh/baywa-re-lusy/publisher-subscriber/tree/main)
+
 ## Installation
 
-TO BE DEFINED
+To install the Publisher/Subscriber tools, you will need [Composer](http://getcomposer.org/) in your project:
 
 ```bash
 composer require baywa-re-lusy/publisher-subscriber
@@ -11,7 +13,7 @@ composer require baywa-re-lusy/publisher-subscriber
 
 ## Usage
 
-Currently, this library only supports PubNub. However it uses an Adapter pattern to allow adding other vendors easily.
+Currently, this library only supports PubNub. However, it uses an Adapter pattern to allow adding other vendors easily.
 
 ```php
 use BayWaReLusy\PublisherSubscriberTools\PubSubTools;
