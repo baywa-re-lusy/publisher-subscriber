@@ -30,7 +30,7 @@ class PubNubAdapter implements PubSubAdapterInterface
     /** @var \PubNub\PubNub */
     protected $pubNub;
 
-    protected const MAX_RETRIES       = 10;
+    protected const MAX_RETRIES       = 3;
     protected const MAX_WAIT_INTERVAL = 25600;
 
     /**
@@ -62,7 +62,6 @@ class PubNubAdapter implements PubSubAdapterInterface
         do {
             try {
                 $this->publishMessage($channel, $message);
-                return;
             } catch (PubNubException $e) {
                 $waitTime = min(self::getWaitTimeExp($retries), self::MAX_WAIT_INTERVAL);
                 error_log(sprintf(
@@ -89,7 +88,7 @@ class PubNubAdapter implements PubSubAdapterInterface
 
     /**
      * @param string $channel
-     * @param $message
+     * @param mixed $message
      * @return void
      * @throws PubNubException
      */
