@@ -31,7 +31,7 @@ class PubNubAdapter implements PubSubAdapterInterface
     protected $pubNub;
 
     protected const MAX_RETRIES       = 3;
-    protected const MAX_WAIT_INTERVAL = 25600;
+    protected const MAX_WAIT_INTERVAL = 6400;
 
     /**
      * @return \PubNub\PubNub
@@ -73,6 +73,13 @@ class PubNubAdapter implements PubSubAdapterInterface
                 $retry = true;
             }
         } while ($retry && ($retries++ < self::MAX_RETRIES));
+
+        if ($retries >= self::MAX_RETRIES) {
+            error_log(sprintf(
+                "[%s] Failed to publish message via PubNub.",
+                (new \DateTime())->format('c')
+            ));
+        }
     }
 
     /**
