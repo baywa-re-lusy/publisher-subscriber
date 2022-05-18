@@ -13,6 +13,8 @@
 
 namespace BayWaReLusy\PublisherSubscriberTools\Adapter;
 
+use PubNub\Exceptions\PubNubException;
+
 /**
  * PubNubAdapter
  *
@@ -27,6 +29,9 @@ class PubNubAdapter implements PubSubAdapterInterface
 {
     /** @var \PubNub\PubNub */
     protected $pubNub;
+
+    protected const MAX_RETRIES       = 10;
+    protected const MAX_WAIT_INTERVAL = 25600;
 
     /**
      * @return \PubNub\PubNub
@@ -51,12 +56,24 @@ class PubNubAdapter implements PubSubAdapterInterface
      */
     public function publish(string $channel, $message): void
     {
-        $this->getPubNub()
-            ->publish()
-            ->channel($channel)
-            ->message($message)
-            ->usePost(true)
-            ->sync();
+        $retries = 0;
+        $retry   = false;
+
+        do {
+            try {
+                $this->publishMessage($channel, $message);
+                return;
+            } catch (PubNubException $e) {
+                $waitTime = min(self::getWaitTimeExp($retries), self::MAX_WAIT_INTERVAL);
+                error_log(sprintf(
+                    "[%s] Backing off PubNub API for %s ms.",
+                    (new \DateTime())->format('c'),
+                    $waitTime
+                ));
+                usleep($waitTime * 1000);
+                $retry = true;
+            }
+        } while ($retry && ($retries++ < self::MAX_RETRIES));
     }
 
     /**
@@ -68,5 +85,34 @@ class PubNubAdapter implements PubSubAdapterInterface
             ->getPubNub()
             ->subscribe()
             ->channels($channels);
+    }
+
+    /**
+     * @param string $channel
+     * @param $message
+     * @return void
+     * @throws PubNubException
+     */
+    protected function publishMessage(string $channel, $message): void
+    {
+        $this
+            ->getPubNub()
+            ->publish()
+            ->channel($channel)
+            ->message($message)
+            ->usePost(true)
+            ->sync();
+    }
+
+    /**
+     * Returns the next wait interval, in milliseconds, using an exponential
+     * backoff algorithm.
+     *
+     * @param int $retryCount
+     * @return int
+     */
+    protected static function getWaitTimeExp(int $retryCount): int
+    {
+        return (int)(pow(2, $retryCount) * 100);
     }
 }
