@@ -2,6 +2,7 @@ version: 2.1
 
 jobs:
   static:
+    resource_class: large
     docker:
       - image: ${ACR_HOSTNAME_PD}/alpine-php81-build:latest
         auth:
