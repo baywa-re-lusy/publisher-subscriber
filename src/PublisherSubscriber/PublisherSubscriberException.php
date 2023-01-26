@@ -1,18 +1,18 @@
 <?php
 
 /**
- * PubSubException.php
+ * PublisherSubscriberException.php
  *
  * @date      15.11.2021
  * @author    Pascal Paulis <pascal.paulis@baywa-re.com>
- * @file      PubSubException.php
+ * @file      PublisherSubscriberException.php
  * @copyright Copyright (c) BayWa r.e. - All rights reserved
  * @license   Unauthorized copying of this source code, via any medium is strictly
  *            prohibited, proprietary and confidential.
  */
 
-namespace BayWaReLusy\PublisherSubscriberTools;
+namespace BayWaReLusy\PublisherSubscriber;
 
-class PubSubException extends \Exception
+class PublisherSubscriberException extends \Exception
 {
 }
