@@ -1,54 +1,69 @@
 <?php
 
 /**
- * PubNubAdapter.php
+ * PubNubService.php
  *
  * @date      15.11.2021
  * @author    Pascal Paulis <pascal.paulis@baywa-re.com>
- * @file      PubNubAdapter.php
+ * @file      PubNubService.php
  * @copyright Copyright (c) BayWa r.e. - All rights reserved
  * @license   Unauthorized copying of this source code, via any medium is strictly
  *            prohibited, proprietary and confidential.
  */
 
-namespace BayWaReLusy\PublisherSubscriberTools\Adapter;
+namespace BayWaReLusy\PublisherSubscriber;
 
 use PubNub\Exceptions\PubNubException;
+use PubNub\PNConfiguration;
+use PubNub\PubNub;
 
 /**
- * PubNubAdapter
+ * PubNubService
  *
  * @package     BayWaReLusy
- * @subpackage  PublisherSubscriberTools
+ * @subpackage  PublisherSubscriber
  * @author      Pascal Paulis <pascal.paulis@baywa-re.com>
  * @copyright   Copyright (c) BayWa r.e. - All rights reserved
  * @license     Unauthorized copying of this source code, via any medium is strictly
  *              prohibited, proprietary and confidential.
  */
-class PubNubAdapter implements PubSubAdapterInterface
+class PubNubService implements PublisherSubscriberServiceInterface
 {
-    /** @var \PubNub\PubNub */
-    protected $pubNub;
+    /** @var PubNub|null */
+    protected ?PubNub $pubNubClient = null;
 
     protected const MAX_RETRIES       = 3;
     protected const MAX_WAIT_INTERVAL = 6400;
 
-    /**
-     * @return \PubNub\PubNub
-     */
-    public function getPubNub(): \PubNub\PubNub
-    {
-        return $this->pubNub;
+    public function __construct(
+        protected string $publisherKey,
+        protected string $subscriberKey,
+        protected string $userId
+    ) {
     }
 
     /**
-     * @param \PubNub\PubNub $pubNub
-     * @return PubNubAdapter
+     * @return PubNub
+     * @throws PublisherSubscriberException
      */
-    public function setPubNub(\PubNub\PubNub $pubNub): PubNubAdapter
+    protected function getPubNubClient(): PubNub
     {
-        $this->pubNub = $pubNub;
-        return $this;
+        try {
+            if (is_null($this->pubNubClient)) {
+                $pnConfiguration = new PNConfiguration();
+                $pnConfiguration
+                    ->setPublishKey($this->publisherKey)
+                    ->setSubscribeKey($this->subscriberKey)
+                    ->setUuid($this->userId)
+                    ->setSecure(true);
+
+                $this->pubNubClient = new PubNub($pnConfiguration);
+            }
+
+            return $this->pubNubClient;
+        } catch (PubNubException $e) {
+            throw new PublisherSubscriberException("Couldn't create PubNub client.");
+        }
     }
 
     /**
@@ -62,7 +77,7 @@ class PubNubAdapter implements PubSubAdapterInterface
         do {
             try {
                 $this->publishMessage($channel, $message);
-            } catch (PubNubException $e) {
+            } catch (PublisherSubscriberException $e) {
                 $waitTime = min(self::getWaitTimeExp($retries), self::MAX_WAIT_INTERVAL);
                 error_log(sprintf(
                     "[%s] Backing off PubNub API for %s ms.",
@@ -88,7 +103,7 @@ class PubNubAdapter implements PubSubAdapterInterface
     public function subscribe(array $channels): void
     {
         $this
-            ->getPubNub()
+            ->getPubNubClient()
             ->subscribe()
             ->channels($channels);
     }
@@ -97,12 +112,12 @@ class PubNubAdapter implements PubSubAdapterInterface
      * @param string $channel
      * @param mixed $message
      * @return void
-     * @throws PubNubException
+     * @throws PublisherSubscriberException
      */
-    protected function publishMessage(string $channel, $message): void
+    protected function publishMessage(string $channel, mixed $message): void
     {
         $this
-            ->getPubNub()
+            ->getPubNubClient()
             ->publish()
             ->channel($channel)
             ->message($message)
