@@ -14,6 +14,7 @@
 namespace BayWaReLusy\PublisherSubscriber;
 
 use PubNub\Exceptions\PubNubException;
+use PubNub\Models\Consumer\ChannelGroup\PNChannelGroupsListChannelsResult;
 use PubNub\PNConfiguration;
 use PubNub\PubNub;
 
@@ -32,7 +33,7 @@ class PubNubService implements PublisherSubscriberServiceInterface
     /** @var PubNub|null */
     protected ?PubNub $pubNubClient = null;
 
-    protected const MAX_RETRIES       = 3;
+    protected const MAX_RETRIES = 3;
     protected const MAX_WAIT_INTERVAL = 6400;
 
     public function __construct(
@@ -72,28 +73,32 @@ class PubNubService implements PublisherSubscriberServiceInterface
     public function publish(string $channel, $message): void
     {
         $retries = 0;
-        $retry   = false;
+        $retry = false;
 
         do {
             try {
                 $this->publishMessage($channel, $message);
             } catch (PublisherSubscriberException $e) {
                 $waitTime = min(self::getWaitTimeExp($retries), self::MAX_WAIT_INTERVAL);
-                error_log(sprintf(
-                    "[%s] Backing off PubNub API for %s ms.",
-                    (new \DateTime())->format('c'),
-                    $waitTime
-                ));
+                error_log(
+                    sprintf(
+                        "[%s] Backing off PubNub API for %s ms.",
+                        (new \DateTime())->format('c'),
+                        $waitTime
+                    )
+                );
                 usleep($waitTime * 1000);
                 $retry = true;
             }
         } while ($retry && ($retries++ < self::MAX_RETRIES));
 
         if ($retries >= self::MAX_RETRIES) {
-            error_log(sprintf(
-                "[%s] Failed to publish message via PubNub.",
-                (new \DateTime())->format('c')
-            ));
+            error_log(
+                sprintf(
+                    "[%s] Failed to publish message via PubNub.",
+                    (new \DateTime())->format('c')
+                )
+            );
         }
     }
 
@@ -122,6 +127,77 @@ class PubNubService implements PublisherSubscriberServiceInterface
             ->channel($channel)
             ->message($message)
             ->usePost(true)
+            ->sync();
+    }
+
+    /**
+     * Add one or more channels to a channelgroup (max 200 channels per call)
+     *
+     * @param string|array $channels
+     * @param string $channelGroup
+     * @return void
+     * @throws PubNubException
+     * @throws PublisherSubscriberException
+     */
+    public function addChannelsToGroup(string|array $channels, string $channelGroup): void
+    {
+        $this
+            ->getPubNubClient()
+            ->addChannelToChannelGroup()
+            ->channels($channels)
+            ->channelGroup($channelGroup)
+            ->sync();
+    }
+
+    /**
+     * List all channels in the channelgroup
+     *
+     * @param string $channelGroup
+     * @return array
+     * @throws PublisherSubscriberException
+     */
+    public function listChannelsInGroup(string $channelGroup): array
+    {
+        $response = $this
+            ->getPubNubClient()
+            ->listChannelsInChannelGroup()
+            ->channelGroup($channelGroup)
+            ->sync();
+
+        return $response->getChannels();
+    }
+
+    /**
+     * Remove one or more channels from a channelgroup
+     *
+     * @param string|array $channels
+     * @param string $channelGroup
+     * @return void
+     * @throws PublisherSubscriberException
+     */
+    public function removeChannelFromGroup(string|array $channels, string $channelGroup): void
+    {
+        $this
+            ->getPubNubClient()
+            ->removeChannelFromChannelGroup()
+            ->channels($channels)
+            ->channelGroup($channelGroup)
+            ->sync();
+    }
+
+    /**
+     * Remove a channel group
+     *
+     * @param string $channelGroup
+     * @return void
+     * @throws PublisherSubscriberException
+     */
+    public function removeChannelGroup(string $channelGroup): void
+    {
+        $this
+            ->getPubNubClient()
+            ->removeChannelGroup()
+            ->channelGroup($channelGroup)
             ->sync();
     }
 
